@@ -4,7 +4,7 @@ use cli_table::{format::Justify, print_stdout, Table, WithTitle};
 use std::fs::*;
 use std::path::*;
 use rand::seq::SliceRandom;
-use std::io::{stdin, stdout, stderr, Write};
+use std::io::{stdin, stdout, Write};
 
 static PATH_FOLDER_DATABASE: &'static str = "data/";
 static PATH_DATABASE: &'static str = "data/password_manager.db";
@@ -17,14 +17,14 @@ struct Cli {
     #[structopt(short="S", long)]
     set: bool,
     #[structopt(short="B", long)]
-    remove_all: bool,
+    remove_all: bool
 }
 
 trait DatabaseRequest {
     // the connection is similor for every structure!!
     fn connect() -> Option<Connection> {
         if !Path::new(PATH_FOLDER_DATABASE).exists() {
-            create_dir(PATH_FOLDER_DATABASE);
+            let _ = create_dir(PATH_FOLDER_DATABASE);
         }
         match sqlite::open(PATH_DATABASE) {
             Ok(conn) => {
@@ -67,8 +67,6 @@ impl DatabaseRequest for PassManager {
                         password: statement.read::<String>(3).unwrap()
                     }])
                 }
-                conn.execute(format!("INSERT INTO transactions (id_manager, actions) VALUES ('{}', '{}')", list[list.len()-1].id, &req)).unwrap();
-
                 Option::from(list)
             }
             None => None
@@ -137,12 +135,12 @@ fn main() -> std::io::Result<()> {
     let cli = Cli::from_args();
     if cli.get {
         let list = PassManager::get_all().unwrap();
-        print_stdout(list.with_title());
+        print_stdout(list.with_title())
     } else if cli.set {
         let username = Input::new("[~] What's you're username? ");
         let website = Input::new("[~] What is the website who would you sign-in? ");
-        let password = random_str();
-        let mut manager = PassManager::set(PassManager {
+        let password = random_str(16);
+        let manager = PassManager::set(PassManager {
             id: PassManager::get_last_id() + 1,
             website,
             username,
@@ -150,25 +148,28 @@ fn main() -> std::io::Result<()> {
         });
 
         let list = PassManager::get_by_id(manager.id).unwrap();
-        print_stdout(list.with_title());
+        print_stdout(list.with_title())
     } else if cli.remove_all {
         let conn = PassManager::connect().unwrap();
         conn.execute("DROP TABLE manager").unwrap();
+        Ok(())
     } else {
         println!("hi :) \n");
         println!("for get help");
-        println!("           --help or -h")
+        println!("           --help or -h");
+        Ok(())
     }
-    Ok(())
 }
 
-fn random_str() -> String {
+fn random_str(length: usize) -> String {
     let mut rng = rand::thread_rng();
     let mut str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmopqrstuvwxyz123456789".to_string().into_bytes();
     let len = str.len();
-    for i in 0..len {
+    for _ in 0..len {
         str.shuffle(&mut rng)
     }
 
-    return String::from_utf8(str).unwrap()
+    let shuffled = String::from_utf8(str).unwrap();
+
+    return format!("{}", &shuffled[0..length])
 }

@@ -5,9 +5,8 @@ use std::fs::*;
 use std::path::*;
 use rand::seq::SliceRandom;
 use std::io::{stdin, stdout, Write};
+use directories::{ProjectDirs};
 
-static PATH_FOLDER_DATABASE: &'static str = "data/";
-static PATH_DATABASE: &'static str = "data/password_manager.db";
 
 #[derive(StructOpt)]
 #[derive(Debug)]
@@ -21,18 +20,22 @@ struct Cli {
 }
 
 trait DatabaseRequest {
-    // the connection is similor for every structure!!
     fn connect() -> Option<Connection> {
-        if !Path::new(PATH_FOLDER_DATABASE).exists() {
-            let _ = create_dir(PATH_FOLDER_DATABASE);
+        if let Some(proj_dirs) = ProjectDirs::from("dev", "L14",  "passmanager") {
+            if !Path::new(proj_dirs.config_dir()).exists() {
+                let _ = create_dir(proj_dirs.config_dir());
+            }
+            match sqlite::open(format!("{}/data.db", proj_dirs.config_dir().to_str().unwrap())) {
+                Ok(conn) => {
+                    conn.execute("CREATE TABLE IF NOT EXISTS manager (id INTEGER PRIMARY KEY AUTOINCREMENT, website TEXT, username TEXT, password TEXT)").unwrap();
+                    Option::from(conn)
+                },
+                Err(_) => None
+            }
+        } else {
+            None
         }
-        match sqlite::open(PATH_DATABASE) {
-            Ok(conn) => {
-                conn.execute("CREATE TABLE IF NOT EXISTS manager (id INTEGER PRIMARY KEY AUTOINCREMENT, website TEXT, username TEXT, password TEXT)").unwrap();
-                return Option::from(conn);
-            },
-            Err(_) => None
-        }
+
     }
 
     fn get_by_id(id: u64) -> Option<Vec<PassManager>>;

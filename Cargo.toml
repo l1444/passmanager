@@ -1,5 +1,5 @@
 [package]
-name = "password_manager"
+name = "passmanager"
 version = "0.1.0"
 authors = ["l14 <l14ms1@outlook.fr>"]
 edition = "2018"
@@ -11,3 +11,4 @@ rand = "0.8.4"
 sqlite = "0.26.0"
 cli-table = "0.4"
 structopt = "0.3"
+directories = "3.0.2"
